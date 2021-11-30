@@ -36,17 +36,19 @@ class SVRModelView(APIView):
             end_date = body['end_date']
             train_size = body['train_size']
             test_size = body['test_size']
-            has_deploy = body['deploy']
+            deploy_size = body['deploy_size']
 
-            dataframe = pd.read_csv(f'D:/Dados historicos-NOVO/Bovespa_02012017_30062021/ohlc/OHLC_{asset_name}_BOV_T.csv', sep=',')
-            
-            if __model.return_X_y(asset_name, dataframe, start_date, end_date, train_size, test_size, has_deploy):
-                model_summary = joblib.load(f'static/saved_models/{asset_name}/SVR_summary.pkl')
+            dataframe = pd.read_csv(
+                f'D:/Dados historicos-NOVO/Bovespa_02012017_30062021/ohlc/OHLC_{asset_name}_BOV_T.csv', sep=',')
+
+            if __model.strategy_run(asset_name, dataframe, start_date, end_date, train_size, test_size, deploy_size):
+                model_summary = joblib.load(
+                    f'static/saved_models/{asset_name}/SVR_summary.pkl')
 
                 return JsonResponse({'model_trained': True})
-            
+
             return JsonResponse({'model_trained': False})
-    
+
     @api_view(['GET'])
     def predict(request):
 
@@ -56,17 +58,18 @@ class SVRModelView(APIView):
             asset_name = body['name']
             data_to_predict = body['data']
 
-            load_model = joblib.load(f'static/saved_models/{asset_name}/SVR.pkl')
-            
+            load_model = joblib.load(
+                f'static/saved_models/{asset_name}/SVR.pkl')
+
             y_pred = load_model.predict(np.array([data_to_predict]))
-            
+
             return JsonResponse({'prediction': y_pred[0]})
-            
+
     def get(self, request):
         body = json.loads(request.body)
         asset_name = body['name']
 
-        model_summary = joblib.load(f'static/saved_models/{asset_name}/SVR_summary.pkl')
+        model_summary = joblib.load(
+            f'static/saved_models/{asset_name}/SVR_summary.pkl')
 
         return JsonResponse({'summary': model_summary})
- 

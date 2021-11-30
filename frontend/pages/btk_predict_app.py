@@ -1,3 +1,6 @@
+import requests
+import joblib
+from sklearn.model_selection import train_test_split
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -9,15 +12,11 @@ from plotly.subplots import make_subplots
 import matplotlib.pyplot as plt
 plt.style.use('dark_background')
 
-from sklearn.model_selection import train_test_split
-
-import joblib
-import requests
 
 # Code
 class PredictionApp:
     def home(self, st):
-        
+
         @st.cache(allow_output_mutation=True)
         def load_data(option, from_year, to_year):
             if from_year == '' or to_year == '':
@@ -28,19 +27,26 @@ class PredictionApp:
         def load_csv(name):
             return pd.read_csv(name)
 
-
-        analysis = st.sidebar.selectbox('Quais tipos de análises você deseja ver?', ('Página inicial', 'Modelos de IA', 'Estratégias Quant', 'Estratégias L&S'))
+        analysis = st.sidebar.selectbox('Quais tipos de análises você deseja ver?', (
+            'Página inicial', 'Modelos de IA'))
 
         if analysis != 'Página inicial':
-            assets = st.sidebar.multiselect('Qual ativo? ', ('VALE3', 'PETR4', 'ITUB4'))
+            assets = st.sidebar.multiselect(
+                'Qual ativo? ', ('VALE3', 'PETR4', 'ITUB4', 'BIDI11'))
 
             if assets:
                 if analysis == 'Modelos de IA':
 
                     models = st.sidebar.multiselect('Qual modelo?', ('SVR', ))
-                    from_year = st.sidebar.number_input('Data Inicial', format='%d', value=2019, min_value=2000, max_value=2022, step=1)
-                    to_year = st.sidebar.number_input('Data Final', format='%d', value=2020, min_value=2000, max_value=2022, step=1)
-                    
+                    st.sidebar.header('Informações para simulação')
+                    st.sidebar.warning(
+                        'Clique em simulação para re treinar o modelo')
+
+                    from_year = st.sidebar.number_input(
+                        'Data Inicial', format='%d', value=2019, min_value=2000, max_value=2022, step=1)
+                    to_year = st.sidebar.number_input(
+                        'Data Final', format='%d', value=2020, min_value=2000, max_value=2022, step=1)
+
                     if from_year > to_year:
                         st.sidebar.error("Data Inicial maior que a Final")
                     else:
@@ -48,34 +54,47 @@ class PredictionApp:
                             deploy = st.sidebar.checkbox('Simulação?')
 
                             if deploy:
-                                train_size_value = st.sidebar.number_input('Treino %', value=80, min_value=0, max_value=90, step=10)
-                                test_size_value = st.sidebar.number_input('Teste %', value=int(90 - train_size_value), min_value=0, max_value=int(90 - train_size_value), step=10)
-                                deploy_size = st.sidebar.number_input('Simulação %', value=int(100 - (train_size_value + test_size_value)), min_value=int(100 - (train_size_value + test_size_value)), max_value=int(100 - (train_size_value + test_size_value)), step=10)
+                                train_size_value = st.sidebar.number_input(
+                                    'Treino %', value=80, min_value=0, max_value=90, step=10)
+                                test_size_value = st.sidebar.number_input('Teste %', value=int(
+                                    90 - train_size_value), min_value=0, max_value=int(90 - train_size_value), step=10)
+                                deploy_size = st.sidebar.number_input('Simulação %', value=int(100 - (train_size_value + test_size_value)), min_value=int(
+                                    100 - (train_size_value + test_size_value)), max_value=int(100 - (train_size_value + test_size_value)), step=10)
+
                             else:
-                                train_size_value = st.sidebar.number_input('Treino %', value=80, min_value=0, max_value=90, step=10)
-                                test_size_value = st.sidebar.number_input('Teste %', value=int(100 - (train_size_value)), min_value=int(100 - train_size_value), max_value=int(100 - train_size_value), step=10)
+                                train_size_value = st.sidebar.number_input(
+                                    'Treino %', value=80, min_value=0, max_value=90, step=10)
+                                test_size_value = st.sidebar.number_input('Teste %', value=int(
+                                    100 - (train_size_value)), min_value=int(100 - train_size_value), max_value=int(100 - train_size_value), step=10)
 
                         for ativo in assets:
                             if '-' not in ativo:
-                                data = load_data(ativo + '.SA', str(int(from_year)), str(int(to_year)))
+                                data = load_data(
+                                    ativo + '.SA', str(int(from_year)), str(int(to_year)))
                             else:
-                                data = load_data(ativo, str(int(from_year)), str(int(to_year)))
+                                data = load_data(ativo, str(
+                                    int(from_year)), str(int(to_year)))
 
                             if not models or not from_year or not to_year:
                                 st.subheader(f'{ativo}')
                                 st.line_chart(data['Close'])
                             else:
                                 for model in models:
-                                    r_summary = requests.get('http://127.0.0.1:8000/setups/svr_model/', json={'name': ativo})
+                                    r_summary = requests.get(
+                                        'http://127.0.0.1:8000/setups/svr_model/', json={'name': ativo})
                                     model_summary = r_summary.json()['summary']
 
-                                    data_ativo = load_data(ativo + '.SA', str(int(from_year)), str(int(to_year)))
+                                    data_ativo = load_data(
+                                        ativo + '.SA', str(int(from_year)), str(int(to_year)))
 
-                                    data_ativo['log_return']= np.log(data_ativo['Close']/data_ativo['Close'].shift(1)).fillna(data_ativo['Close'].mean())
-                                    
-                                    y_pred = requests.get('http://127.0.0.1:8000/setups/svr_model/predict', json={'name': ativo, 'data': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]})
+                                    data_ativo['log_return'] = np.log(
+                                        data_ativo['Close']/data_ativo['Close'].shift(1)).fillna(data_ativo['Close'].mean())
 
-                                    st.subheader(f'{ativo} - Modelo {model} de {int(from_year)} até {int(to_year)}')
+                                    y_pred = requests.get('http://127.0.0.1:8000/setups/svr_model/predict', json={
+                                                          'name': ativo, 'data': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]})
+
+                                    st.subheader(
+                                        f'{ativo} - Modelo {model} de {int(from_year)} até {int(to_year)}')
 
                                     # train_size = len(y_train.index)
                                     # test_size = len(y_test.index)
@@ -86,12 +105,12 @@ class PredictionApp:
                                     # plt_train = concat.copy()
                                     # plt_test = concat.copy()
                                     # # plt_pred = concat.copy()
-                                    
+
                                     # plt_train.iloc[:train_size] = None
                                     # plt_test.iloc[train_size:] = None
                                     # # plt_pred.iloc[:train_size] = None
 
-                                    # df = pd.DataFrame() 
+                                    # df = pd.DataFrame()
 
                                     # df['Test'] = plt_train
                                     # df['Train'] = plt_test
@@ -113,15 +132,57 @@ class PredictionApp:
                                     else:
                                         st.error("VENDA")
 
+                                    if deploy:
+                                        if st.sidebar.button('Simular'):
+                                            json = {
+                                                'name': ativo,
+                                                'start_date': f'{str(int(from_year))}-01-01',
+                                                'end_date': f'{str(int(to_year))}-01-01',
+                                                'train_size': train_size_value/100,
+                                                'test_size': test_size_value/100,
+                                                'deploy_size': deploy_size/100
+                                            }
+                                            response = requests.get(
+                                                f'http://127.0.0.1:8000/setups/{model.lower()}_model/fit', json=json)
+
+                                            if response.status_code == 200:
+                                                r_summary = requests.get(
+                                                    'http://127.0.0.1:8000/setups/svr_model/', json={'name': ativo})
+                                                model_summary = r_summary.json()[
+                                                    'summary']
+
+                                    else:
+                                        if st.sidebar.button('Simular'):
+                                            json = {
+                                                'name': ativo,
+                                                'start_date': f'{str(int(from_year))}-01-01',
+                                                'end_date': f'{str(int(to_year))}-01-01',
+                                                'train_size': train_size_value/100,
+                                                'test_size': test_size_value/100,
+                                                'deploy_size': 0.0
+                                            }
+                                            response = requests.get(
+                                                f'http://127.0.0.1:8000/setups/{model.lower()}_model/fit', json=json)
+
+                                            if response.status_code == 200:
+                                                r_summary = requests.get(
+                                                    'http://127.0.0.1:8000/setups/svr_model/', json={'name': ativo})
+                                                model_summary = r_summary.json()[
+                                                    'summary']
+
                                     with st.expander('Mais detalhes'):
-                                        st.subheader('Métricas')
+                                        st.subheader('Métricas (% de erro)')
+
                                         for col, key in zip(st.columns(len(model_summary)), model_summary):
                                             with col:
-                                                st.write(f'{key}: ', model_summary[key])
+                                                st.write(
+                                                    f'{key}: ', model_summary[key], ' %')
+
                                         st.subheader('Histórico do modelo')
                                         st.write(data.tail(10))
                                         st.subheader('Relatório do modelo')
-                                        st.download_button('Documento', data=f'static/docs/{ativo}/{model}.pdf', file_name=f'{ativo}_{model}_BTK.pdf')
-                                                                        
+                                        st.download_button(
+                                            'Documento', data=f'static/docs/{ativo}/{model}.pdf', file_name=f'{ativo}_{model}_BTK.pdf')
+
         else:
             st.write('Este é um aplicativo que mostra os sinais de estratégias e modelos de inteligência artificial hospedados dentro da BTK A.Intelligence.\n\n Ele tem por objetivo ser um ferramenta para auxiliar nos investimentos em um determinado ativo ou cesta de ativos.')

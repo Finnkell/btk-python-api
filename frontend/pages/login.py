@@ -3,11 +3,11 @@ import requests
 import json
 import random
 
+
 class LoginApp:
     def __init__(self):
         self.__email = ''
         self.__pass = ''
-
 
     def home(self, st):
         with st.form(key='login', clear_on_submit=False):
@@ -27,11 +27,11 @@ class LoginApp:
                 else:
                     st.session_state.is_logged = False
 
-
     def handle_login(self, user, password):
         status = ''
 
-        response = requests.post('http://127.0.0.1:8000/auth/login/', data=json.dumps({"username": user, "password": password}), headers={'content-type': 'application/json'})
+        response = requests.post('http://127.0.0.1:8000/auth/login/', data=json.dumps(
+            {"username": user, "password": password}), headers={'content-type': 'application/json'})
 
         status = response.json()['status']
 

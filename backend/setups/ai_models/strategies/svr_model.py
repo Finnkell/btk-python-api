@@ -7,21 +7,37 @@ import vectorbt as vbt
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
 
+
 class SVRStrategyModel:
 
-    def model_run(self, name, X_train, X_test, y_train, y_test):
-        try:
-            model = SVRModel()
-            model.create_model()
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
-            print(model.model_summary(y_pred, y_test))
-            model.save_model(f'{name}/SVR')
-            return True
-        except Exception():
-            return False
+    def __init__(self):
+        return
 
-    def return_X_y(self, asset_name, df, start_date, end_date, train_size, test_size, has_deploy):
+    def model_run(self, name, X_train, X_test, y_train, y_test, X_deploy, y_deploy):
+        model = SVRModel()
+        model.create_model()
+        model.fit(X_train, y_train)
+
+        if type(X_deploy) != type(None) and type(y_deploy) != type(None):
+            y_pred = model.predict(X_test)
+            y_pred_deploy = model.predict(X_deploy)
+
+            print(model.model_summary(y_pred, y_test, y_pred_deploy, y_deploy))
+
+            model.save_model(f'{name}/SVR')
+
+            return True
+        else:
+            y_pred = model.predict(X_test)
+            print(model.model_summary(y_pred, y_test,
+                  None, None))
+            model.save_model(f'{name}/SVR')
+
+            return True
+
+        return False
+
+    def strategy_run(self, asset_name, df, start_date, end_date, train_size, test_size, deploy_size):
         columns = {
             '<DATE>_<TIME>': 'datetime',
             '<OPEN>': 'open',
@@ -74,21 +90,28 @@ class SVRStrategyModel:
         df['desv_15'] = df['log_return'].rolling(window=15).std()
         df['desv_30'] = df['log_return'].rolling(window=30).std()
 
-        df.loc[(df['close'] > df['close'].shift(2)) & df['desv_2'].notnull(), 'var_2'] = df['desv_2']
+        df.loc[(df['close'] > df['close'].shift(2)) &
+               df['desv_2'].notnull(), 'var_2'] = df['desv_2']
         df.loc[(df['close'] < df['close'].shift(2)), 'var_2'] = -df['desv_2']
 
-        df.loc[(df['close'] > df['close'].shift(5)) & df['desv_5'].notnull(), 'var_5'] = df['desv_5']
+        df.loc[(df['close'] > df['close'].shift(5)) &
+               df['desv_5'].notnull(), 'var_5'] = df['desv_5']
         df.loc[(df['close'] < df['close'].shift(5)), 'var_5'] = -df['desv_5']
 
-        df.loc[(df['close'] > df['close'].shift(10)) & df['desv_10'].notnull(), 'var_10'] = df['desv_10']
-        df.loc[(df['close'] < df['close'].shift(10)), 'var_10'] = -df['desv_10']
+        df.loc[(df['close'] > df['close'].shift(10)) &
+               df['desv_10'].notnull(), 'var_10'] = df['desv_10']
+        df.loc[(df['close'] < df['close'].shift(10)),
+               'var_10'] = -df['desv_10']
 
-        df.loc[(df['close'] > df['close'].shift(15)) & df['desv_15'].notnull(), 'var_15'] = df['desv_15']
-        df.loc[(df['close'] < df['close'].shift(15)), 'var_15'] = -df['desv_15']
+        df.loc[(df['close'] > df['close'].shift(15)) &
+               df['desv_15'].notnull(), 'var_15'] = df['desv_15']
+        df.loc[(df['close'] < df['close'].shift(15)),
+               'var_15'] = -df['desv_15']
 
-        df.loc[(df['close'] > df['close'].shift(30)) & df['desv_30'].notnull(), 'var_30'] = df['desv_30']
-        df.loc[(df['close'] < df['close'].shift(30)), 'var_30'] = -df['desv_30']
-
+        df.loc[(df['close'] > df['close'].shift(30)) &
+               df['desv_30'].notnull(), 'var_30'] = df['desv_30']
+        df.loc[(df['close'] < df['close'].shift(30)),
+               'var_30'] = -df['desv_30']
 
         df['ma_2'].fillna(df['ma_2'].mean(), inplace=True)
         df['ma_5'].fillna(df['ma_5'].mean(), inplace=True)
@@ -118,11 +141,20 @@ class SVRStrategyModel:
         df['var_30'].fillna(df['var_30'].median(), inplace=True)
 
         y = df['log_return'].shift(-1).fillna(df['log_return'].median())
-        X = df.drop(['log_return', 'tend_2', 'tend_5', 'tend_10', 'tend_15', 'tend_30',], axis=1)
+        X = df.drop(['log_return', 'tend_2', 'tend_5',
+                    'tend_10', 'tend_15', 'tend_30', ], axis=1)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, train_size=train_size, random_state=123, shuffle=False)
+        if deploy_size == 0.0:
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=test_size, train_size=train_size, random_state=123, shuffle=False)
 
-        return self.model_run(asset_name, X_train, X_test, y_train, y_test)
+            return self.model_run(asset_name, X_train, X_test, y_train, y_test, None, None)
+        else:
+            train_value = int(len(X)*((1-deploy_size) - train_size))
+            test_value = int(len(X)*((1-deploy_size) - test_size))
+            deploy_value = int(len(X)*((train_size + test_size)) - deploy_size)
 
+            X_train, X_test, X_deploy, y_train, y_test, y_deploy = X[
+                : train_value], X[test_value: deploy_value], X[deploy_value:], y[: train_value], y[test_value: deploy_value], y[deploy_value:]
 
-        
+            return self.model_run(asset_name, X_train, X_test, y_train, y_test, X_deploy, y_deploy)

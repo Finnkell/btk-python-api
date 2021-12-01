@@ -94,11 +94,11 @@ class UserAuthentication(APIView):
 
             try:
                 user = UserAccount.objects.get(pk=cpf)
-            except Snippet.DoesNotExist:
+            except:
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
             user = auth.authenticate(
-                request, username=user, password=int(password))
+                request, username=user, password=password)
 
             if user is not None:
                 auth_login(request, user)

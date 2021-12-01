@@ -1,2 +1,6 @@
 streamlit
 yfinance
+joblib
+sklearn
+plotly
+matplotlib

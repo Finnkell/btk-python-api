@@ -1,5 +1,0 @@
-streamlit
-django
-pandas
-numpy
-tensorflow

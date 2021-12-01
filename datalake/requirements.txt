@@ -1,0 +1,10 @@
+numpy
+sklearn
+tensorflow==2.7.0
+plotly
+yfinance
+Django>=3.2,<4.0
+DjangoRestFramework>=3.12,<4.0
+Pandas>=1.3,<1.4
+Streamlit>=1.2,<2.0
+plyvel

@@ -13,7 +13,7 @@ class LoginApp:
         with st.form(key='login', clear_on_submit=False):
             st.header('Login')
 
-            self.__email = st.text_input('Username')
+            self.__email = st.text_input('Cpf')
             self.__password = st.text_input('Password', type='password')
 
             submitted = st.form_submit_button('Login')
@@ -30,10 +30,10 @@ class LoginApp:
     def handle_login(self, user, password):
         status = ''
 
-        response = requests.post('http://127.0.0.1:8000/auth/login/', data=json.dumps(
-            {"username": user, "password": password}), headers={'content-type': 'application/json'})
+        response = requests.post('http://127.0.0.1:8000/auth/login', data=json.dumps(
+            {"cpf": user, "password": str(password)}), headers={'content-type': 'application/json'})
 
-        status = response.json()['status']
+        status = response.status_code
 
         if status:
             return status

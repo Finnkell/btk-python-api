@@ -1,15 +1,14 @@
 import streamlit as st
 
-from pages.risk_management_app import RiskManagementApp
-from pages.btk_predict_app import PredictionApp
-from pages.stock_monitor_app import StockMonitorApp
-from pages.login import LoginApp
+from .btk_main_app import BTKMainApp
+from .login import LoginApp
 
 import requests
 import json
 
 
 class BTKApp:
+
     def __init__(self, logged):
         if not logged:
             self.login = LoginApp()
@@ -22,8 +21,9 @@ class BTKApp:
             self.login.home(st=st)
 
         if st.session_state.is_logged:
-            st.header('BTK App 🏄🏻‍♂️')
-            PredictionApp().home(st=st)
+            st.header('BTK App')
+            st.sidebar.header('Sidebar BTK App')
+            BTKMainApp().home(st=st)
 
             # if st.sidebar.button('Log Out'):
             #     print(

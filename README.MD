@@ -8,7 +8,7 @@
 
 ```
 
-# WHOLE PROJECT PACKAGES INSTALLATION SET-UP
+# Whole project packages installation SET-UP
 
 ### First things first, create a ``venv`` or ``conda env`` to install the packages.
 
@@ -20,7 +20,6 @@
 
 # BACKEND SET-UP and START SERVER
 ~> python ./backend/manage.py makemigrations && python ./backend/manage.py migrate 
-
 ~> python ./backend/manage.py createsuperuser
 ~> python ./backend/manage.py runserver
 
@@ -29,7 +28,7 @@
 
 ```
 
-## INSTALLATION SET-UP to FrontEnd only
+## Installation SET-UP to Frontend only
 
 ```sh
 
@@ -41,7 +40,7 @@
 ```
 
 
-## INSTALLATION SET-UP to BackEnd only
+## Installation SET-UP to Backend only
 
 ```sh
 
@@ -52,7 +51,7 @@
 
 ```
 
-### BACKEND Avaliable Routes
+### Backend Available Routes
 
 ```sh
 
@@ -60,9 +59,12 @@
 GET|POST localhost:<port>/admin
 
 # SETUPS
-GET|POST localhost:<port>/svr_model/
-GET|POST localhost:<port>/svr_model/fit
-GET|POST localhost:<port>/svr_model/predict
+GET|POST localhost:<port>/setups/svr_model/
+GET|POST localhost:<port>/setups/svr_model/fit
+GET|POST localhost:<port>/setups/svr_model/predict
+
+# TOOLS
+GET|POST localhost:<port>/tools/
 
 # AUTH
 POST localhost:<port>/auth/register/

@@ -1,7 +1,5 @@
-# import streamlit as st
 import requests
 import json
-import random
 
 
 class LoginApp:
@@ -38,4 +36,4 @@ class LoginApp:
         if status:
             return status
         else:
-            return
+            return None

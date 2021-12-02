@@ -1,0 +1,33 @@
+version: '3.7'
+
+services:
+  db:
+    container_name: postgres_container
+    image: postgres
+    environment:
+      POSTGRES_NAME: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+       - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres
+    restart: always
+  web:
+    container_name: django_container
+    build: .
+    command: python /code_branch/manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code_branch
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+networks:
+  postgres:
+    driver: bridge
+
+volumes:
+  postgres:

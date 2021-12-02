@@ -1,29 +1,40 @@
 import requests
 import json
 
+from pages.register import RegisterApp
 
 class LoginApp:
     def __init__(self):
         self.__email = ''
         self.__pass = ''
+        
+        self.__register_app = RegisterApp()
 
     def home(self, st):
-        with st.form(key='login', clear_on_submit=False):
-            st.header('Login')
+        if st.session_state.w_register:
+            self.__register_app.home(st=st)
+           
+        if not st.session_state.w_register:
+            with st.form(key='login', clear_on_submit=False):
+                st.header('Login')
 
-            self.__email = st.text_input('Cpf')
-            self.__password = st.text_input('Password', type='password')
+                self.__email = st.text_input('Cpf')
+                self.__password = st.text_input('Password', type='password')
 
-            submitted = st.form_submit_button('Login')
+                submitted = st.form_submit_button('Login')
 
-            if submitted:
-                status = self.handle_login(self.__email, self.__password)
+                if submitted:
+                    status = self.handle_login(self.__email, self.__password)
 
-                if status == 200:
-                    st.session_state.is_logged = True
-                    st.experimental_rerun()
-                else:
-                    st.session_state.is_logged = False
+                    if status == 200:
+                        st.session_state.is_logged = True
+                        st.experimental_rerun()
+                    else:
+                        st.session_state.is_logged = False
+                        
+            if st.button('Criar conta'):
+                st.session_state.w_register = True
+                st.experimental_rerun()
 
     def handle_login(self, user, password):
         status = ''

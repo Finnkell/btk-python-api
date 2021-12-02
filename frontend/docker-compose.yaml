@@ -2,6 +2,7 @@ version: "3.7"
 services:
   streamlit:
     build: .
+    container_name: streamlit_container
     command: "streamlit run routes.py"
     ports:
       - "8501:8501"

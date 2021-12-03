@@ -3,6 +3,8 @@ from sklearn.model_selection import train_test_split
 
 from .ai_models_app import AIModelsApp
 
+from .long_and_short_app import LongAndShortApp
+
 import joblib
 import requests
 import yfinance as yf
@@ -25,7 +27,7 @@ class BTKMainApp:
             if analysis == 'Modelos de IA':
                 AIModelsApp().home(st=st)
             elif analysis == 'Estratégias L&S':
-                pass
+                LongAndShortApp().home(st=st)
             elif analysis == 'Markowitz':
                 pass
         else:

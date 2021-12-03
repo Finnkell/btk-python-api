@@ -13,6 +13,8 @@ from minio import Minio
 from io import BytesIO
 # Operators; we need this to operate!
 from airflow.decorators import dag, task
+from airflow.models import Variable
+
 # [END import_module]
 
 # [START default_args]
@@ -65,6 +67,9 @@ def new_ohlc():
     @task()
     def send_csv(name, process_bucket, curated_bucket, timeframe):
         import pandas as pd
+        found = client.bucket_exists(curated_bucket)
+        if not found:
+            client.make_bucket(curated_bucket)
         try:
             response = client.get_object(process_bucket, name,)
             data = pd.read_csv(response).to_csv(index=False).encode('utf8')
@@ -73,10 +78,12 @@ def new_ohlc():
             response.release_conn()
         result = client.put_object(curated_bucket, name, BytesIO(data), length=len(data), content_type="application/csv") 
 
-    timeframes = ['1S', '10S', '30S', '1Min', '5Min', '10Min', '15Min', '30Min', '1H', '4H', '12H', '1D']
+    key = Variable.get("console", deserialize_json=True)
+    print(key)
     # timeframes = ['W']
-    access_key = 'JGBBW2AVEAIVA9IMOWF2'
-    secret_key = 'GE6bKVVrRj19MJ1TjdERxaGAoMXVBNZdgY8GMPf7'
+    access_key = '0PTK2GLT3BAJ9YT6WYIN'
+    secret_key = 'kn7Z2EE0rF1AIUv3caJT6DftA4ArMn4LWHix59+4'
+    timeframes = ['1S', '10S', '30S', '1Min', '5Min', '10Min', '15Min', '30Min', '1H', '4H', '12H', '1D', '7D']
     client = Minio("host.docker.internal:9000", access_key=access_key, secret_key=secret_key, secure=False)
     for file in client.list_objects('landing'):
         name = file.object_name

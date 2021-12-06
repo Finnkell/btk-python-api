@@ -4,7 +4,7 @@
 
 ~> git clone --branch master https://github.com/Finnkell/btk-python-api.git
 ~> cd btk-python-api
-~> git checkout -b sprint-<fist_name_letter>0.1
+~> git checkout -b sprint-<name_first_letter>0.1
 
 ```
 

@@ -17,3 +17,4 @@ backend/setups/ai_models/strategies/__pycache__/*
 
 backend/setups/ai_models/svm/__pycache__
 backend/setups/ai_models/svm/__pycache__/*
+test.py

@@ -75,6 +75,26 @@ class SVRModelView(APIView):
 
             return JsonResponse({'prediction': y_pred[0]})
 
+    @api_view(['GET'])
+    def get_features(request):
+
+        if request.method == 'GET':
+            body_data = json.dumps(request.data)
+            body = json.loads(body_data)
+
+            __model = SVRStrategyModel()
+
+            asset_name = body['name']
+            start_date = body['start_date']
+            end_date = body['end_date']
+            data_to_get_features = body['data']
+
+            df = pd.DataFrame.from_dict(data_to_get_features)
+
+            df_features = __model.create_dataframe(df, start_date, end_date)
+
+            return JsonResponse({'df_features': df_features})
+
     def get(self, request):
         body = json.loads(request.body)
         asset_name = body['name']

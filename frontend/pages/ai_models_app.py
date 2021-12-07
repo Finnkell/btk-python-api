@@ -156,6 +156,10 @@ class AIModelsApp:
                                     showgrid=False), yaxis=dict(showgrid=False))
 
                             fig = go.Figure()
+                            fig.update_xaxes(
+                                gridwidth=1, gridcolor='#444')
+                            fig.update_yaxes(
+                                gridwidth=1, gridcolor='#444')
 
                             fig.add_trace(__treino)
                             fig.add_trace(__teste)

@@ -105,15 +105,17 @@ class AIModelsApp:
                                 )
 
                                 __teste = go.Scatter(
-                                    x=data_ativo['Date'].iloc[test_value:deploy_value],
-                                    y=data_ativo['Close'].iloc[test_value:deploy_value],
+                                    x=data_ativo['Date'].iloc[test_value -
+                                                              1:deploy_value],
+                                    y=data_ativo['Close'].iloc[test_value -
+                                                               1:deploy_value],
                                     # fill='tozeroy', # fill area between trace0 and trace1
                                     mode='lines', line_color='#ce03fc', name='Teste'
                                 )
 
                                 __simulacao = go.Scatter(
-                                    x=data_ativo['Date'].iloc[deploy_value:],
-                                    y=data_ativo['Close'].iloc[deploy_value:],
+                                    x=data_ativo['Date'].iloc[deploy_value-1:],
+                                    y=data_ativo['Close'].iloc[deploy_value-1:],
                                     # fill='tozeroy', # fill area between trace0 and trace1
                                     mode='lines', line_color='#03fc90',
                                     name='Simulação'
@@ -135,14 +137,14 @@ class AIModelsApp:
                                 __treino = go.Scatter(
                                     x=data_ativo['Date'].iloc[:test_value],
                                     y=data_ativo['Close'].iloc[:test_value],
-                                    # fill='tonexty', # fill area between trace0 and trace1
+                                    # fill='tonexty',  # fill area between trace0 and trace1
                                     mode='lines', line_color='#03adfc',
                                     name='Treino'
                                 )
 
                                 __teste = go.Scatter(
-                                    x=data_ativo['Date'].iloc[test_value:],
-                                    y=data_ativo['Close'].iloc[test_value:],
+                                    x=data_ativo['Date'].iloc[test_value-1:],
+                                    y=data_ativo['Close'].iloc[test_value-1:],
                                     # fill='tozeroy', # fill area between trace0 and trace1
                                     mode='lines', line_color='#ce03fc', name='Teste'
                                 )
@@ -162,6 +164,9 @@ class AIModelsApp:
                                 fig.add_trace(__simulacao)
 
                             st.plotly_chart(fig, use_container_width=True)
+
+                            features = requests.get(
+                                'https://btk-ai-app.herokuapp.com/setups/svr_model/get_features', json={'name': ativo})
 
                             y_pred = requests.get('https://btk-ai-app.herokuapp.com/setups/svr_model/predict', json={
                                 'name': ativo, 'data': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]})
@@ -190,7 +195,7 @@ class AIModelsApp:
 
                                     if response.status_code == 200:
                                         r_summary = requests.get(
-                                            'https://btk-ai-app.herokuapp.com/setups/svr_model/', json={'name': ativo})
+                                            f'https://btk-ai-app.herokuapp.com/setups/{model.lower()}_model/', json={'name': ativo})
                                         model_summary = r_summary.json()[
                                             'summary']
                             else:
@@ -208,7 +213,7 @@ class AIModelsApp:
 
                                 if response.status_code == 200:
                                     r_summary = requests.get(
-                                        'https://btk-ai-app.herokuapp.com/setups/svr_model/', json={'name': ativo})
+                                        f'https://btk-ai-app.herokuapp.com/setups/{model.lower()}_model/', json={'name': ativo})
                                     model_summary = r_summary.json()['summary']
 
                             with st.expander('Mais detalhes'):

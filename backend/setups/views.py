@@ -32,7 +32,8 @@ class SVRModelView(APIView):
 
             __model = SVRStrategyModel()
 
-            body = json.loads(request.body)
+            body_data = json.dumps(request.data)
+            body = json.loads(body_data)
 
             asset_name = body['name']
             start_date = body['start_date']
@@ -61,7 +62,8 @@ class SVRModelView(APIView):
     def predict(request):
 
         if request.method == 'GET':
-            body = json.loads(request.body)
+            body_data = json.dumps(request.data)
+            body = json.loads(body_data)
 
             asset_name = body['name']
             data_to_predict = body['data']

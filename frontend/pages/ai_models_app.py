@@ -23,7 +23,8 @@ class AIModelsApp:
         def load_csv(name):
             return pd.read_csv(name)
 
-        assets = st.sidebar.multiselect('Qual ativo? ', ('VALE3', 'PETR4', 'ITUB4', 'BIDI11'))
+        assets = st.sidebar.multiselect(
+            'Qual ativo? ', ('VALE3', 'PETR4', 'ITUB4', 'BIDI11', 'ABEV3'))
 
         if assets:
             models = st.sidebar.multiselect('Qual modelo?', ('SVR', ))
@@ -63,129 +64,135 @@ class AIModelsApp:
                         data = load_data(
                             ativo + '.SA', str(int(from_year)), str(int(to_year)))
                     else:
-                        data = load_data(ativo, str(int(from_year)), str(int(to_year)))
+                        data = load_data(ativo, str(
+                            int(from_year)), str(int(to_year)))
 
                     if not models or not from_year or not to_year:
                         st.subheader(f'Gráfico de Preço da {ativo}')
                         st.line_chart(data['Close'])
                     else:
                         for model in models:
-                            r_summary = requests.get('http://127.0.0.1:8000/setups/svr_model/', json={'name': ativo})
+                            r_summary = requests.get(
+                                'https://btk-ai-app.herokuapp.com/setups/svr_model/', json={'name': ativo})
 
                             model_summary = r_summary.json()['summary']
 
-                            data_ativo = load_data(ativo + '.SA', str(int(from_year)), str(int(to_year)))
+                            data_ativo = load_data(
+                                ativo + '.SA', str(int(from_year)), str(int(to_year)))
 
-                            data_ativo['log_return'] = np.log(data_ativo['Close']/data_ativo['Close'].shift(1)).fillna(data_ativo['Close'].mean())
+                            data_ativo['Date'] = data_ativo.index
 
-                            y_pred = requests.get('http://127.0.0.1:8000/setups/svr_model/predict', json={
-                                'name': ativo, 'data': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]})
+                            data_ativo['log_return'] = np.log(
+                                data_ativo['Close']/data_ativo['Close'].shift(1)).fillna(data_ativo['Close'].mean())
 
-                            st.subheader(f'{ativo} - Modelo {model} de {int(from_year)} até {int(to_year)}')
+                            st.subheader(
+                                f'{ativo} - Modelo {model} de {int(from_year)} até {int(to_year)}')
 
-                            # train_size = len(y_train.index)
-                            # test_size = len(y_test.index)
-                            # # pred_size = len(pd.DataFrame(y_pred).index)
+                            if deploy:
+                                train_value = int(
+                                    len(data_ativo)*((1-deploy_size/100) - train_size_value/100))
+                                test_value = int(
+                                    len(data_ativo)*((1-deploy_size/100) - test_size_value/100))
+                                deploy_value = int(
+                                    len(data_ativo)*((train_size_value/100 + test_size_value/100)) - deploy_size/100)
 
-                            # concat = pd.concat([y_train, y_test], ignore_index=True)
+                                __treino = go.Scatter(
+                                    x=data_ativo['Date'].iloc[:test_value],
+                                    y=data_ativo['Close'].iloc[:test_value],
+                                    # fill='tonexty', # fill area between trace0 and trace1
+                                    mode='lines', line_color='#03adfc',
+                                    name='Treino'
+                                )
 
-                            # plt_train = concat.copy()
-                            # plt_test = concat.copy()
-                            # # plt_pred = concat.copy()
+                                __teste = go.Scatter(
+                                    x=data_ativo['Date'].iloc[test_value:deploy_value],
+                                    y=data_ativo['Close'].iloc[test_value:deploy_value],
+                                    # fill='tozeroy', # fill area between trace0 and trace1
+                                    mode='lines', line_color='#ce03fc', name='Teste'
+                                )
 
-                            # plt_train.iloc[:train_size] = None
-                            # plt_test.iloc[train_size:] = None
-                            # # plt_pred.iloc[:train_size] = None
+                                __simulacao = go.Scatter(
+                                    x=data_ativo['Date'].iloc[deploy_value:],
+                                    y=data_ativo['Close'].iloc[deploy_value:],
+                                    # fill='tozeroy', # fill area between trace0 and trace1
+                                    mode='lines', line_color='#03fc90',
+                                    name='Simulação'
+                                )
 
-                            # df = pd.DataFrame()
+                                scatter_data = [__treino, __teste, __simulacao]
+                                group_labels = ['Treino', 'Teste', 'Simulação']
 
-                            # df['Test'] = plt_train
-                            # df['Train'] = plt_test
-                            # # df['Pred'] = plt_pred
+                                layout = go.Layout(legend=dict(traceorder="reversed"), xaxis=dict(
+                                    showgrid=False), yaxis=dict(showgrid=False))
 
-                            # fig_pyplot, ax = plt.subplots(figsize=(15, 15))
-                            # ax.plot(df['Test'])
-                            # ax.plot(df['Train'])
+                            else:
+                                train_value = int(
+                                    len(data_ativo)*(1 - train_size_value/100))
+                                test_value = int(
+                                    len(data_ativo)*(1 - test_size_value/100))
+                                deploy_value = len(data_ativo)
 
-                            # fig = px.line(df)
-                            # fig.update_layout(template='plotly_dark')
+                                __treino = go.Scatter(
+                                    x=data_ativo['Date'].iloc[:test_value],
+                                    y=data_ativo['Close'].iloc[:test_value],
+                                    # fill='tonexty', # fill area between trace0 and trace1
+                                    mode='lines', line_color='#03adfc',
+                                    name='Treino'
+                                )
 
-                            # st.pyplot(fig_pyplot)
+                                __teste = go.Scatter(
+                                    x=data_ativo['Date'].iloc[test_value:],
+                                    y=data_ativo['Close'].iloc[test_value:],
+                                    # fill='tozeroy', # fill area between trace0 and trace1
+                                    mode='lines', line_color='#ce03fc', name='Teste'
+                                )
 
-                            __treino = go.Scatter(
-                                x=[0, 1, 2],
-                                y=[10, 30, 12],
-                                # fill='tonexty', # fill area between trace0 and trace1
-                                mode='lines', line_color='#03adfc',
-                                name='Treino'
-                            )
+                                scatter_data = [__treino, __teste]
+                                group_labels = ['Treino', 'Teste']
 
-                            __teste = go.Scatter(
-                                x=[2, 3, 4],
-                                y=[12, 43, 14],
-                                # fill='tozeroy', # fill area between trace0 and trace1
-                                mode='lines', line_color='#ce03fc', name='Teste'
-                            )
+                                layout = go.Layout(legend=dict(traceorder="reversed"), xaxis=dict(
+                                    showgrid=False), yaxis=dict(showgrid=False))
 
-                            __simulacao = go.Scatter(
-                                x=[4, 5, 6],
-                                y=[14, 15, 21],
-                                # fill='tozeroy', # fill area between trace0 and trace1
-                                mode='lines', line_color='#03fc90',
-                                name='Simulação'
-                            )
-
-                            scatter_data = [__treino, __teste, __simulacao]
-                            group_labels = ['Treino', 'Teste', 'Simulação']
-
-                            layout = go.Layout(legend=dict(traceorder="reversed"), xaxis=dict(showgrid=False), yaxis=dict(showgrid=False))
-
-                            # fig = go.Figure(data=scatter_data, layout=layout)
                             fig = go.Figure()
 
                             fig.add_trace(__treino)
                             fig.add_trace(__teste)
 
+                            if deploy:
+                                fig.add_trace(__simulacao)
+
                             st.plotly_chart(fig, use_container_width=True)
 
+                            y_pred = requests.get('https://btk-ai-app.herokuapp.com/setups/svr_model/predict', json={
+                                'name': ativo, 'data': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]})
 
-                            if y_pred.json()['prediction'] > data_ativo['log_return'].iloc[-2]:
+                            if y_pred.json()['prediction'] > data_ativo['log_return'].iloc[-1]:
                                 st.success("COMPRA")
                             else:
                                 st.error("VENDA")
 
                             if deploy:
-                                    with fig.batch_update():
-                                        fig.add_trace(__simulacao)
-                                    # st.plotly_chart(fig, use_container_width=True)
-                                    # fig.data = []
-                                    # st.plotly_chart(fig, use_container_width=True)
-                                    # fig.update_traces(
-                                    #     line_color='#910404',
-                                    #     selector=dict(type='scatter', mode='lines'))
+                                with fig.batch_update():
+                                    fig.add_trace(__simulacao)
 
-                                    # st.plotly_chart.empty()
+                                json = {
+                                    'name': ativo,
+                                    'start_date': f'{str(int(from_year))}-01-01',
+                                    'end_date': f'{str(int(to_year))}-01-01',
+                                    'train_size': train_size_value/100,
+                                    'test_size': test_size_value/100,
+                                    'deploy_size': deploy_size/100
+                                }
 
-                                    json = {
-                                        'name': ativo,
-                                        'start_date': f'{str(int(from_year))}-01-01',
-                                        'end_date': f'{str(int(to_year))}-01-01',
-                                        'train_size': train_size_value/100,
-                                        'test_size': test_size_value/100,
-                                        'deploy_size': deploy_size/100
-                                    }
+                                if simular:
+                                    response = requests.get(
+                                        f'https://btk-ai-app.herokuapp.com/setups/{model.lower()}_model/fit', json=json)
 
-                                    if simular:
-                                        response = requests.get(
-                                            f'http://127.0.0.1:8000/setups/{model.lower()}_model/fit', json=json)
-
-                                        if response.status_code == 200:
-                                            r_summary = requests.get(
-                                                'http://127.0.0.1:8000/setups/svr_model/', json={'name': ativo})
-                                            model_summary = r_summary.json()['summary']
-                                            
-                                            st.subheader('Simular True | Depoy True')
-                                            st.json(model_summary)
+                                    if response.status_code == 200:
+                                        r_summary = requests.get(
+                                            'https://btk-ai-app.herokuapp.com/setups/svr_model/', json={'name': ativo})
+                                        model_summary = r_summary.json()[
+                                            'summary']
                             else:
                                 json = {
                                     'name': ativo,
@@ -197,23 +204,20 @@ class AIModelsApp:
                                 }
 
                                 response = requests.get(
-                                    f'http://127.0.0.1:8000/setups/{model.lower()}_model/fit', json=json)
+                                    f'https://btk-ai-app.herokuapp.com/setups/{model.lower()}_model/fit', json=json)
 
                                 if response.status_code == 200:
                                     r_summary = requests.get(
-                                        'http://127.0.0.1:8000/setups/svr_model/', json={'name': ativo})
+                                        'https://btk-ai-app.herokuapp.com/setups/svr_model/', json={'name': ativo})
                                     model_summary = r_summary.json()['summary']
-
-                                    st.json(model_summary)
-
-                                st.subheader('Simular False | Depoy False')
 
                             with st.expander('Mais detalhes'):
                                 st.subheader('Métricas (% de erro)')
 
                                 for col, key in zip(st.columns(len(model_summary)), model_summary):
                                     with col:
-                                        st.write(f'{key}: ', model_summary[key], ' %')
+                                        st.write(
+                                            f'{key}: ', model_summary[key], ' %')
 
                                 st.subheader('Histórico do modelo')
                                 st.write(data.tail(10))

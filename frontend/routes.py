@@ -3,7 +3,7 @@ from pages.index import BTKApp
 
 st.set_page_config(
     page_title='BTK App',
-    # layout='wide'
+    layout='wide'
 )
 
 if "is_logged" not in st.session_state:

@@ -38,15 +38,26 @@ class SVRStrategyModel:
         return False
 
     def strategy_run(self, asset_name, df, start_date, end_date, train_size, test_size, deploy_size):
+        # columns = {
+        #     '<DATE>_<TIME>': 'datetime',
+        #     '<OPEN>': 'open',
+        #     '<HIGH>': 'high',
+        #     '<LOW>': 'low',
+        #     '<CLOSE>': 'close',
+        # }
+
+        # df.drop(['<TICK>', '<VOL>', '<VFL>'], axis=1, inplace=True)
+
+        df['Date'] = df.index
+
         columns = {
-            '<DATE>_<TIME>': 'datetime',
-            '<OPEN>': 'open',
-            '<HIGH>': 'high',
-            '<LOW>': 'low',
-            '<CLOSE>': 'close',
+            'Date': 'datetime',
+            'Open': 'open',
+            'High': 'high',
+            'Low': 'low',
+            'Close': 'close',
         }
 
-        df.drop(['<TICK>', '<VOL>', '<VFL>'], axis=1, inplace=True)
         df.rename(columns=columns, inplace=True)
 
         df['datetime'] = pd.to_datetime(df['datetime'])

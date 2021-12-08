@@ -39,6 +39,9 @@ class UserAccountCRUD:
 
         def post(self, request, *args, **kwargs):
             password = str(request.data['password'])
+            
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
 
             auth.models.User.objects.create_user(
                 username=str(request.data['username']), email=request.data['email'], password=password)
@@ -91,14 +94,15 @@ class UserAuthentication(APIView):
             body_data = json.loads(body_data)
 
             cpf, password = str(body_data['cpf']), str(body_data['password'])
+            
+            print(cpf, password)
 
             try:
                 user = UserAccount.objects.get(pk=cpf)
             except:
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
-            user = auth.authenticate(
-                request, username=user, password=password)
+            user = auth.authenticate(request, username=user, password=password)
 
             if user is not None:
                 auth_login(request, user)

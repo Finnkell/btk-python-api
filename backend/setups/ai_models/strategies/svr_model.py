@@ -38,38 +38,6 @@ class SVRStrategyModel:
         return False
 
     def strategy_run(self, asset_name, df, start_date, end_date, train_size, test_size, deploy_size):
-        # columns = {
-        #     '<DATE>_<TIME>': 'datetime',
-        #     '<OPEN>': 'open',
-        #     '<HIGH>': 'high',
-        #     '<LOW>': 'low',
-        #     '<CLOSE>': 'close',
-        # }
-
-        # df.drop(['<TICK>', '<VOL>', '<VFL>'], axis=1, inplace=True)
-
-        df = self.create_dataframe(df, start_date, end_date, train_size)
-
-        y = df['log_return'].shift(-1).fillna(df['log_return'].median())
-        X = df.drop(['log_return', 'tend_2', 'tend_5',
-                    'tend_10', 'tend_15', 'tend_30', ], axis=1)
-
-        if deploy_size == 0.0:
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=test_size, train_size=train_size, random_state=123, shuffle=False)
-
-            return self.model_run(asset_name, X_train, X_test, y_train, y_test, None, None)
-        else:
-            train_value = int(len(X)*((1-deploy_size) - train_size))
-            test_value = int(len(X)*((1-deploy_size) - test_size))
-            deploy_value = int(len(X)*((train_size + test_size)) - deploy_size)
-
-            X_train, X_test, X_deploy, y_train, y_test, y_deploy = X[
-                : train_value], X[test_value: deploy_value], X[deploy_value:], y[: train_value], y[test_value: deploy_value], y[deploy_value:]
-
-            return self.model_run(asset_name, X_train, X_test, y_train, y_test, X_deploy, y_deploy)
-
-    def create_dataframe(self, df, start_date, end_date):
         df['Date'] = df.index
 
         columns = {
@@ -79,6 +47,8 @@ class SVRStrategyModel:
             'Low': 'low',
             'Close': 'close',
         }
+
+        df.drop(['Volume', 'Adj Close'], axis=1, inplace=True)
 
         df.rename(columns=columns, inplace=True)
 
@@ -173,4 +143,21 @@ class SVRStrategyModel:
         df['desv_30'].fillna(df['desv_30'].median(), inplace=True)
         df['var_30'].fillna(df['var_30'].median(), inplace=True)
 
-        return df
+        y = df['log_return'].shift(-1).fillna(df['log_return'].median())
+        X = df.drop(['log_return', 'tend_2', 'tend_5',
+                    'tend_10', 'tend_15', 'tend_30', ], axis=1)
+
+        if deploy_size == 0.0:
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=test_size, train_size=train_size, random_state=123, shuffle=False)
+
+            return self.model_run(asset_name, X_train, X_test, y_train, y_test, None, None)
+        else:
+            train_value = int(len(X)*((1-deploy_size) - train_size))
+            test_value = int(len(X)*((1-deploy_size) - test_size))
+            deploy_value = int(len(X)*((train_size + test_size)) - deploy_size)
+
+            X_train, X_test, X_deploy, y_train, y_test, y_deploy = X[:train_value], X[test_value: deploy_value], X[
+                deploy_value:], y[: train_value], y[test_value: deploy_value], y[deploy_value:]
+
+            return self.model_run(asset_name, X_train, X_test, y_train, y_test, X_deploy, y_deploy)

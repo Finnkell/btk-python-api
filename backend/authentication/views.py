@@ -29,6 +29,9 @@ class UserInfoCRUD:
 
         def post(self, request, *args, **kwargs):
             return self.create(request, *args, **kwargs)
+            
+        def get(self, request):
+            return Response({'ok': 200})    
 
 
 class UserAccountCRUD:
@@ -44,6 +47,10 @@ class UserAccountCRUD:
                 username=str(request.data['username']), email=request.data['email'], password=password)
 
             return self.create(request, *args, **kwargs)
+
+        def get(self, request):
+            return Response({'ok': 200})
+            
 
     class Update(generics.UpdateAPIView):
         queryset = UserAccount.objects.all()

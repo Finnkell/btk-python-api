@@ -42,9 +42,6 @@ class SVRModelView(APIView):
             test_size = body['test_size']
             deploy_size = body['deploy_size']
 
-            # dataframe = pd.read_csv(
-            #     f'D:/Dados historicos-NOVO/Bovespa_02012017_30062021/ohlc/OHLC_{asset_name}_BOV_T.csv', sep=',')
-
             try:
                 dataframe = yf.download(asset_name + '.SA')
             except Exception:

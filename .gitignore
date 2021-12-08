@@ -28,7 +28,6 @@ backend/setups/ai_models/strategies/__pycache__/svr_model.cpython-38.pyc
 backend/setups/ai_models/svm/__pycache__/svm.cpython-38.pyc
 backend/db.sqlite3
 
-
 backend/static/saved_models/
 backend/static/saved_models/BIDI11/SVR_summary_deploy.pkl
 backend/static/saved_models/BIDI11/SVR_summary.pkl
@@ -42,6 +41,7 @@ backend/static/saved_models/VALE3/SVR_summary.pkl
 backend/static/saved_models/VALE3/SVR.pkl
 backend/static/saved_models/BIDI11/SVR_summary_deploy.pkl
 backend/setups/ai_models/strategies/__pycache__/svr_model.cpython-38.pyc
+<<<<<<< HEAD
 backend/setups/ai_models/svm/__pycache__/svm.cpython-38.pyc
 backend/setups/ai_models/svm/__pycache__/svm.cpython-38.pyc
 backend/setups/ai_models/strategies/__pycache__/svr_model.cpython-38.pyc
@@ -49,3 +49,6 @@ backend/setups/ai_models/strategies/__pycache__/svr_model.cpython-38.pyc
 backend/setups/ai_models/svm/__pycache__/svm.cpython-38.pyc
 backend/setups/ai_models/svm/__pycache__/svm.cpython-38.pyc
 backend/setups/ai_models/svm/__pycache__/svm.cpython-38.pyc
+=======
+backend/setups/ai_models/svm/__pycache__/svm.cpython-38.pyc
+>>>>>>> master

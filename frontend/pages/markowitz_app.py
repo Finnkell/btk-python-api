@@ -6,6 +6,8 @@ import requests
 import plotly.express as px
 import plotly.graph_objects as go
 
+from pages.markowitz.Markowits import markowitz
+
 
 class MarkowitzApp:
 
@@ -23,8 +25,8 @@ class MarkowitzApp:
         def load_json():
             return pd.read_json('static/stocks.json')
 
-        stocks = load_json()
-        tickets = (stocks['stocks'])
+        # stocks = load_json()
+        # tickets = (stocks['stocks'])
 
         window_option = st.sidebar.selectbox(
             'Método', ('Markowitz para ações', 'Markowitz para modelos de IA', ))
@@ -32,9 +34,20 @@ class MarkowitzApp:
         if window_option == 'Markowitz para ações':
             st.header('Método de Markowitz para ações')
 
-            qtd_ativos = st.sidebar.text_input('Quantidade de ativos')
+            symbols = ["JPM", "NFLX","AAPL" , "LOW" , "QRVO" , "AES" , "BEN" , "LRCX"  , "NUE" ,  "EXPD"]
 
-            if qtd_ativos != '':
-                for i in range(int(qtd_ativos)):
-                    st.sidebar.selectbox(f'Ativo {i}', tickets)
-            st.write(MarkowitzStocks())
+            assets = st.sidebar.multiselect('Selecione sua carteira de ativos', symbols)
+
+            if len(assets) >= 2:
+                from_year = st.sidebar.number_input('Data Inicial', format='%d', value=2019, min_value=2000, max_value=2022, step=1)
+                to_year = st.sidebar.number_input('Data Final', format='%d', value=2020, min_value=2000, max_value=2022, step=1)
+                
+                if from_year > to_year:
+                    st.sidebar.error("Data Inicial maior que a Final")
+                else:
+                    ok = st.sidebar.button('Aplicar Markowitz')
+                
+                    if ok:
+                        df_symbols = yf.download(assets, start=f'{from_year}-01-01', end=f'{to_year}-12-31', progress=False)['Close']
+                        
+                        markowitz(df_symbols, st)

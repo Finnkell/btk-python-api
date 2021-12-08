@@ -2,6 +2,7 @@ from plotly.subplots import make_subplots
 from sklearn.model_selection import train_test_split
 
 from .ai_models_app import AIModelsApp
+from .markowitz_app import MarkowitzApp
 
 from .long_and_short_app import LongAndShortApp
 
@@ -29,6 +30,6 @@ class BTKMainApp:
             elif analysis == 'Estratégias L&S':
                 LongAndShortApp().home(st=st)
             elif analysis == 'Markowitz':
-                pass
+                MarkowitzApp().home(st=st)
         else:
             st.markdown('Este é um aplicativo que mostra os sinais de estratégias e modelos de inteligência artificial hospedados dentro da BTK A.Intelligence.\n\n Ele tem por objetivo ser um ferramenta para auxiliar nos investimentos em um determinado ativo ou cesta de ativos.')

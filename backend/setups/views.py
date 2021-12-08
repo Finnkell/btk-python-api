@@ -1,5 +1,7 @@
 from django.shortcuts import render
 
+from asgiref.sync import sync_to_async
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import JsonResponse
@@ -11,6 +13,7 @@ import joblib
 
 import numpy as np
 import pandas as pd
+import yfinance as yf
 
 from .ai_models.strategies.svr_model import SVRStrategyModel
 
@@ -29,7 +32,8 @@ class SVRModelView(APIView):
 
             __model = SVRStrategyModel()
 
-            body = json.loads(request.body)
+            body_data = json.dumps(request.data)
+            body = json.loads(body_data)
 
             asset_name = body['name']
             start_date = body['start_date']
@@ -38,14 +42,19 @@ class SVRModelView(APIView):
             test_size = body['test_size']
             deploy_size = body['deploy_size']
 
-            dataframe = pd.read_csv(
-                f'D:/Dados historicos-NOVO/Bovespa_02012017_30062021/ohlc/OHLC_{asset_name}_BOV_T.csv', sep=',')
+            # dataframe = pd.read_csv(
+            #     f'D:/Dados historicos-NOVO/Bovespa_02012017_30062021/ohlc/OHLC_{asset_name}_BOV_T.csv', sep=',')
 
-            if __model.strategy_run(asset_name, dataframe, start_date, end_date, train_size, test_size, deploy_size):
-                model_summary = joblib.load(
-                    f'static/saved_models/{asset_name}/SVR_summary.pkl')
+            try:
+                dataframe = yf.download(asset_name + '.SA')
+            except Exception:
+                return JsonResponse({'error': 'Download error', 'response': 500})
 
-                return JsonResponse({'model_trained': True})
+            try:
+                if __model.strategy_run(asset_name, dataframe, start_date, end_date, train_size, test_size, deploy_size):
+                    return JsonResponse({'model_trained': True})
+            except Exception:
+                return JsonResponse({'model_trained': False, 'error': 'Strategy run error', 'response': 500})
 
             return JsonResponse({'model_trained': False})
 
@@ -53,7 +62,8 @@ class SVRModelView(APIView):
     def predict(request):
 
         if request.method == 'GET':
-            body = json.loads(request.body)
+            body_data = json.dumps(request.data)
+            body = json.loads(body_data)
 
             asset_name = body['name']
             data_to_predict = body['data']

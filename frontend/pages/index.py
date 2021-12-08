@@ -3,12 +3,13 @@ import streamlit as st
 from .btk_main_app import BTKMainApp
 from .login import LoginApp
 
+from .long_and_short_app import LongAndShortApp
+
 import requests
 import json
 
 
 class BTKApp:
-
     def __init__(self, logged):
         if not logged:
             self.login = LoginApp()

@@ -10,16 +10,6 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
 
-class VBTIndicator:
-    def __init__(self, indicator):
-        self.indicator = indicator
-
-
-def hash_indicator_reference(vbt_indicator):
-    indicator = VBTIndicator.indicator
-    return vbt.MA.run
-
-
 class AIModelsApp:
 
     def home(self, st):

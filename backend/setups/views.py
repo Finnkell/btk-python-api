@@ -42,9 +42,6 @@ class SVRModelView(APIView):
             test_size = body['test_size']
             deploy_size = body['deploy_size']
 
-            # dataframe = pd.read_csv(
-            #     f'D:/Dados historicos-NOVO/Bovespa_02012017_30062021/ohlc/OHLC_{asset_name}_BOV_T.csv', sep=',')
-
             try:
                 dataframe = yf.download(asset_name + '.SA')
             except Exception:
@@ -74,26 +71,6 @@ class SVRModelView(APIView):
             y_pred = load_model.predict(np.array([data_to_predict]))
 
             return JsonResponse({'prediction': y_pred[0]})
-
-    @api_view(['GET'])
-    def get_features(request):
-
-        if request.method == 'GET':
-            body_data = json.dumps(request.data)
-            body = json.loads(body_data)
-
-            __model = SVRStrategyModel()
-
-            asset_name = body['name']
-            start_date = body['start_date']
-            end_date = body['end_date']
-            data_to_get_features = body['data']
-
-            df = pd.DataFrame.from_dict(data_to_get_features)
-
-            df_features = __model.create_dataframe(df, start_date, end_date)
-
-            return JsonResponse({'df_features': df_features})
 
     def get(self, request):
         body = json.loads(request.body)

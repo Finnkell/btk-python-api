@@ -85,7 +85,7 @@ class AIModelsApp:
 
                     if not models or not from_year or not to_year:
                         st.subheader(f'Gráfico de Preço da {ativo}')
-                        st.line_chart(data['close'])
+                        st.line_chart(data['Close'])
                     else:
                         for model in models:
                             r_summary = requests.get(
@@ -98,25 +98,15 @@ class AIModelsApp:
 
                             df['Date'] = df.index
 
-                            columns = {
-                                'Date': 'datetime',
-                                'Open': 'open',
-                                'High': 'high',
-                                'Low': 'low',
-                                'Close': 'close',
-                            }
-
-                            df.rename(columns=columns, inplace=True)
-
-                            df['datetime'] = pd.to_datetime(df['datetime'])
-                            df.set_index('datetime', drop=True, inplace=True)
+                            df['Date'] = pd.to_datetime(df['Date'])
+                            df.set_index('Date', drop=False, inplace=True)
 
                             df = df[str(int(from_year)):str(int(to_year))]
 
                             df['log_return'] = np.log(
-                                df['close']/df['close'].shift(-1))
+                                df['Close']/df['Close'].shift(-1))
 
-                            df['diff'] = df['high'] - df['low']
+                            df['diff'] = df['High'] - df['Low']
 
                             df['ma_2'] = df['diff'].rolling(window=2).mean()
                             df['ma_5'] = df['diff'].rolling(window=5).mean()
@@ -170,29 +160,29 @@ class AIModelsApp:
                             df['desv_30'] = df['log_return'].rolling(
                                 window=30).std()
 
-                            df.loc[(df['close'] > df['close'].shift(2)) &
+                            df.loc[(df['Close'] > df['Close'].shift(2)) &
                                    df['desv_2'].notnull(), 'var_2'] = df['desv_2']
-                            df.loc[(df['close'] < df['close'].shift(2)),
+                            df.loc[(df['Close'] < df['Close'].shift(2)),
                                    'var_2'] = -df['desv_2']
 
-                            df.loc[(df['close'] > df['close'].shift(5)) &
+                            df.loc[(df['Close'] > df['Close'].shift(5)) &
                                    df['desv_5'].notnull(), 'var_5'] = df['desv_5']
-                            df.loc[(df['close'] < df['close'].shift(5)),
+                            df.loc[(df['Close'] < df['Close'].shift(5)),
                                    'var_5'] = -df['desv_5']
 
-                            df.loc[(df['close'] > df['close'].shift(10)) &
+                            df.loc[(df['Close'] > df['Close'].shift(10)) &
                                    df['desv_10'].notnull(), 'var_10'] = df['desv_10']
-                            df.loc[(df['close'] < df['close'].shift(10)),
+                            df.loc[(df['Close'] < df['Close'].shift(10)),
                                    'var_10'] = -df['desv_10']
 
-                            df.loc[(df['close'] > df['close'].shift(15)) &
+                            df.loc[(df['Close'] > df['Close'].shift(15)) &
                                    df['desv_15'].notnull(), 'var_15'] = df['desv_15']
-                            df.loc[(df['close'] < df['close'].shift(15)),
+                            df.loc[(df['Close'] < df['Close'].shift(15)),
                                    'var_15'] = -df['desv_15']
 
-                            df.loc[(df['close'] > df['close'].shift(30)) &
+                            df.loc[(df['Close'] > df['Close'].shift(30)) &
                                    df['desv_30'].notnull(), 'var_30'] = df['desv_30']
-                            df.loc[(df['close'] < df['close'].shift(30)),
+                            df.loc[(df['Close'] < df['Close'].shift(30)),
                                    'var_30'] = -df['desv_30']
 
                             df['ma_2'].fillna(df['ma_2'].mean(), inplace=True)
@@ -235,53 +225,47 @@ class AIModelsApp:
                             df['var_30'].fillna(
                                 df['var_30'].median(), inplace=True)
 
-                            df.drop(['log_return', 'tend_2', 'tend_5',
-                                     'tend_10', 'tend_15', 'tend_30', ], axis=1, inplace=True)
+                            data_ativo = deepcopy(df)
 
-                            pred_list = []
+                            df.drop(['Volume', 'Adj Close', 'log_return', 'tend_2', 'tend_5',
+                                     'tend_10', 'tend_15', 'tend_30', 'Date'], axis=1, inplace=True)
 
-                            for i in range(len(df.index)):
-                                list_to_pred = df.iloc[i].tolist()
-                                print(len(list_to_pred))
-                                y_pred = requests.get('https://btk-ai-app.herokuapp.com/setups/svr_model/predict', json={
-                                    'name': ativo, 'data': list_to_pred})
-                                pred_list.append(y_pred.json()['prediction'])
+                            list_to_pred = df.iloc[-1].tolist()
 
-                            df['pred'] = pred_list
-
-                            st.write(df)
+                            y_pred = requests.get('https://btk-ai-app.herokuapp.com/setups/svr_model/predict', json={
+                                'name': ativo, 'data': list_to_pred})
 
                             st.subheader(
                                 f'{ativo} - Modelo {model} de {int(from_year)} até {int(to_year)}')
 
                             if deploy:
                                 train_value = int(
-                                    len(df)*((1-deploy_size/100) - train_size_value/100))
+                                    len(data_ativo)*((1-deploy_size/100) - train_size_value/100))
                                 test_value = int(
-                                    len(df)*((1-deploy_size/100) - test_size_value/100))
+                                    len(data_ativo)*((1-deploy_size/100) - test_size_value/100))
                                 deploy_value = int(
-                                    len(df)*((train_size_value/100 + test_size_value/100)) - deploy_size/100)
+                                    len(data_ativo)*((train_size_value/100 + test_size_value/100)) - deploy_size/100)
 
                                 __treino = go.Scatter(
-                                    x=df['datetime'].iloc[:test_value],
-                                    y=df['close'].iloc[:test_value],
+                                    x=data_ativo['Date'].iloc[:test_value],
+                                    y=data_ativo['Close'].iloc[:test_value],
                                     # fill='tonexty', # fill area between trace0 and trace1
                                     mode='lines', line_color='#03adfc',
                                     name='Treino'
                                 )
 
                                 __teste = go.Scatter(
-                                    x=df['datetime'].iloc[test_value -
-                                                          1:deploy_value],
-                                    y=df['close'].iloc[test_value -
-                                                       1:deploy_value],
+                                    x=data_ativo['Date'].iloc[test_value -
+                                                              1:deploy_value],
+                                    y=data_ativo['Close'].iloc[test_value -
+                                                               1:deploy_value],
                                     # fill='tozeroy', # fill area between trace0 and trace1
                                     mode='lines', line_color='#ce03fc', name='Teste'
                                 )
 
                                 __simulacao = go.Scatter(
-                                    x=df['datetime'].iloc[deploy_value-1:],
-                                    y=df['close'].iloc[deploy_value-1:],
+                                    x=data_ativo['Date'].iloc[deploy_value-1:],
+                                    y=data_ativo['Close'].iloc[deploy_value-1:],
                                     # fill='tozeroy', # fill area between trace0 and trace1
                                     mode='lines', line_color='#03fc90',
                                     name='Simulação'
@@ -295,22 +279,22 @@ class AIModelsApp:
 
                             else:
                                 train_value = int(
-                                    len(df)*(1 - train_size_value/100))
+                                    len(data_ativo)*(1 - train_size_value/100))
                                 test_value = int(
-                                    len(df)*(1 - test_size_value/100))
-                                deploy_value = len(df)
+                                    len(data_ativo)*(1 - test_size_value/100))
+                                deploy_value = len(data_ativo)
 
                                 __treino = go.Scatter(
-                                    x=df['datetime'].iloc[:test_value],
-                                    y=df['close'].iloc[:test_value],
+                                    x=data_ativo['Date'].iloc[:test_value],
+                                    y=data_ativo['Close'].iloc[:test_value],
                                     # fill='tonexty',  # fill area between trace0 and trace1
                                     mode='lines', line_color='#03adfc',
                                     name='Treino'
                                 )
 
                                 __teste = go.Scatter(
-                                    x=df['datetime'].iloc[test_value-1:],
-                                    y=df['close'].iloc[test_value-1:],
+                                    x=data_ativo['Date'].iloc[test_value-1:],
+                                    y=data_ativo['Close'].iloc[test_value-1:],
                                     # fill='tozeroy', # fill area between trace0 and trace1
                                     mode='lines', line_color='#ce03fc', name='Teste'
                                 )
@@ -335,7 +319,7 @@ class AIModelsApp:
 
                             st.plotly_chart(fig, use_container_width=True)
 
-                            if y_pred.json()['prediction'] > df['log_return'].iloc[-1]:
+                            if y_pred.json()['prediction'] > data_ativo['log_return'].iloc[-1]:
                                 st.success("COMPRA")
                             else:
                                 st.error("VENDA")

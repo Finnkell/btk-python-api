@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
 import yfinance as yf
+import vectorbt as vbt
 import requests
+from copy import deepcopy
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -9,17 +11,31 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
 
+class VBTIndicator:
+    def __init__(self, indicator):
+        self.indicator = indicator
+
+
+def hash_indicator_reference(vbt_indicator):
+    indicator = VBTIndicator.indicator
+    return vbt.MA.run
+
+
 class AIModelsApp:
 
     def home(self, st):
 
         @st.cache(allow_output_mutation=True)
+        def load_df(ativo, start_date, end_date):
+            return None
+
+        @ st.cache(allow_output_mutation=True)
         def load_data(option, from_year, to_year):
             if from_year == '' or to_year == '':
                 return yf.download(option)
             return yf.download(option, start=f'{from_year}-01-01', end=f'{to_year}-01-01')
 
-        @st.cache(allow_output_mutation=True)
+        @ st.cache(allow_output_mutation=True)
         def load_csv(name):
             return pd.read_csv(name)
 
@@ -77,13 +93,147 @@ class AIModelsApp:
 
                             model_summary = r_summary.json()['summary']
 
-                            data_ativo = load_data(
+                            df = load_data(
                                 ativo + '.SA', str(int(from_year)), str(int(to_year)))
 
-                            data_ativo['Date'] = data_ativo.index
+                            df['Date'] = df.index
 
-                            data_ativo['log_return'] = np.log(
-                                data_ativo['Close']/data_ativo['Close'].shift(1)).fillna(data_ativo['Close'].mean())
+                            df['Date'] = pd.to_datetime(df['Date'])
+                            df.set_index('Date', drop=False, inplace=True)
+
+                            df = df[str(int(from_year)):str(int(to_year))]
+
+                            df['log_return'] = np.log(
+                                df['Close']/df['Close'].shift(-1))
+
+                            df['diff'] = df['High'] - df['Low']
+
+                            df['ma_2'] = df['diff'].rolling(window=2).mean()
+                            df['ma_5'] = df['diff'].rolling(window=5).mean()
+                            df['ma_10'] = df['diff'].rolling(window=10).mean()
+                            df['ma_15'] = df['diff'].rolling(window=15).mean()
+                            df['ma_30'] = df['diff'].rolling(window=30).mean()
+
+                            df.loc[df['ma_2'] > df['ma_2'].shift(
+                                1), 'tend_2'] = 1
+                            df.loc[df['ma_2'] < df['ma_2'].shift(
+                                1), 'tend_2'] = -1
+                            df.loc[df['ma_2'] == df['ma_2'].shift(
+                                1), 'tend_2'] = 0
+
+                            df.loc[df['ma_5'] > df['ma_5'].shift(
+                                4), 'tend_5'] = 1
+                            df.loc[df['ma_5'] < df['ma_5'].shift(
+                                4), 'tend_5'] = -1
+                            df.loc[df['ma_5'] == df['ma_5'].shift(
+                                4), 'tend_5'] = 0
+
+                            df.loc[df['ma_10'] > df['ma_10'].shift(
+                                9), 'tend_10'] = 1
+                            df.loc[df['ma_10'] < df['ma_10'].shift(
+                                9), 'tend_10'] = -1
+                            df.loc[df['ma_10'] == df['ma_10'].shift(
+                                9), 'tend_10'] = 0
+
+                            df.loc[df['ma_15'] > df['ma_15'].shift(
+                                14), 'tend_15'] = 1
+                            df.loc[df['ma_15'] < df['ma_15'].shift(
+                                14), 'tend_15'] = -1
+                            df.loc[df['ma_15'] == df['ma_15'].shift(
+                                14), 'tend_15'] = 0
+
+                            df.loc[df['ma_30'] > df['ma_30'].shift(
+                                29), 'tend_30'] = 1
+                            df.loc[df['ma_30'] < df['ma_30'].shift(
+                                29), 'tend_30'] = -1
+                            df.loc[df['ma_30'] == df['ma_30'].shift(
+                                29), 'tend_30'] = 0
+
+                            df['desv_2'] = df['log_return'].rolling(
+                                window=2).std()
+                            df['desv_5'] = df['log_return'].rolling(
+                                window=5).std()
+                            df['desv_10'] = df['log_return'].rolling(
+                                window=10).std()
+                            df['desv_15'] = df['log_return'].rolling(
+                                window=15).std()
+                            df['desv_30'] = df['log_return'].rolling(
+                                window=30).std()
+
+                            df.loc[(df['Close'] > df['Close'].shift(2)) &
+                                   df['desv_2'].notnull(), 'var_2'] = df['desv_2']
+                            df.loc[(df['Close'] < df['Close'].shift(2)),
+                                   'var_2'] = -df['desv_2']
+
+                            df.loc[(df['Close'] > df['Close'].shift(5)) &
+                                   df['desv_5'].notnull(), 'var_5'] = df['desv_5']
+                            df.loc[(df['Close'] < df['Close'].shift(5)),
+                                   'var_5'] = -df['desv_5']
+
+                            df.loc[(df['Close'] > df['Close'].shift(10)) &
+                                   df['desv_10'].notnull(), 'var_10'] = df['desv_10']
+                            df.loc[(df['Close'] < df['Close'].shift(10)),
+                                   'var_10'] = -df['desv_10']
+
+                            df.loc[(df['Close'] > df['Close'].shift(15)) &
+                                   df['desv_15'].notnull(), 'var_15'] = df['desv_15']
+                            df.loc[(df['Close'] < df['Close'].shift(15)),
+                                   'var_15'] = -df['desv_15']
+
+                            df.loc[(df['Close'] > df['Close'].shift(30)) &
+                                   df['desv_30'].notnull(), 'var_30'] = df['desv_30']
+                            df.loc[(df['Close'] < df['Close'].shift(30)),
+                                   'var_30'] = -df['desv_30']
+
+                            df['ma_2'].fillna(df['ma_2'].mean(), inplace=True)
+                            df['ma_5'].fillna(df['ma_5'].mean(), inplace=True)
+                            df['ma_10'].fillna(
+                                df['ma_10'].mean(), inplace=True)
+                            df['ma_15'].fillna(
+                                df['ma_15'].mean(), inplace=True)
+                            df['ma_30'].fillna(
+                                df['ma_30'].mean(), inplace=True)
+
+                            df['tend_2'].fillna(0, inplace=True)
+                            df['tend_5'].fillna(0, inplace=True)
+                            df['tend_10'].fillna(0, inplace=True)
+                            df['tend_15'].fillna(0, inplace=True)
+                            df['tend_30'].fillna(0, inplace=True)
+
+                            df['desv_2'].fillna(
+                                df['desv_2'].median(), inplace=True)
+                            df['var_2'].fillna(
+                                df['var_2'].median(), inplace=True)
+
+                            df['desv_5'].fillna(
+                                df['desv_5'].median(), inplace=True)
+                            df['var_5'].fillna(
+                                df['var_5'].median(), inplace=True)
+
+                            df['desv_10'].fillna(
+                                df['desv_10'].median(), inplace=True)
+                            df['var_10'].fillna(
+                                df['var_10'].median(), inplace=True)
+
+                            df['desv_15'].fillna(
+                                df['desv_15'].median(), inplace=True)
+                            df['var_15'].fillna(
+                                df['var_15'].median(), inplace=True)
+
+                            df['desv_30'].fillna(
+                                df['desv_30'].median(), inplace=True)
+                            df['var_30'].fillna(
+                                df['var_30'].median(), inplace=True)
+
+                            data_ativo = deepcopy(df)
+
+                            df.drop(['Volume', 'Adj Close', 'log_return', 'tend_2', 'tend_5',
+                                     'tend_10', 'tend_15', 'tend_30', 'Date'], axis=1, inplace=True)
+
+                            list_to_pred = df.iloc[-1].tolist()
+
+                            y_pred = requests.get('https://btk-ai-app.herokuapp.com/setups/svr_model/predict', json={
+                                'name': ativo, 'data': list_to_pred})
 
                             st.subheader(
                                 f'{ativo} - Modelo {model} de {int(from_year)} até {int(to_year)}')
@@ -168,12 +318,6 @@ class AIModelsApp:
                                 fig.add_trace(__simulacao)
 
                             st.plotly_chart(fig, use_container_width=True)
-
-                            features = requests.get(
-                                'https://btk-ai-app.herokuapp.com/setups/svr_model/get_features', json={'name': ativo})
-
-                            y_pred = requests.get('https://btk-ai-app.herokuapp.com/setups/svr_model/predict', json={
-                                'name': ativo, 'data': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]})
 
                             if y_pred.json()['prediction'] > data_ativo['log_return'].iloc[-1]:
                                 st.success("COMPRA")

@@ -1,5 +1,4 @@
-from django.http import response
-from django.test import TestCase, Client
+from django.test import TestCase
 from django.urls import reverse, resolve
 
 from tools.views import HomeView, MarkowitzView

@@ -8,9 +8,7 @@ import plotly.graph_objects as go
 
 from pages.markowitz.Markowits import markowitz
 
-
 class MarkowitzApp:
-
     def home(self, st):
 
         @st.cache
@@ -39,15 +37,43 @@ class MarkowitzApp:
             assets = st.sidebar.multiselect('Selecione sua carteira de ativos', symbols)
 
             if len(assets) >= 2:
+                # TODO: O USUÁRIO COLOCAR A PORCENTAGEM DE CAPITAL PARA CADA ATIVO
+                
+                # st.sidebar.markdown('Deseja colocar porcentagem dividida para cada ativo?')
+                # weight_button = st.sidebar.button('Sim')
+
+                # if weight_button:
+                #     st.write('-------')
+                #     wallet_weights = []
+                #     max_weight = 100.0
+
+                #     for asset in assets:
+                #         porcentagem = st.sidebar.number_input(f'Porcentagem aplicada em {asset}', format='%f', value=1.0, min_value=1.0, max_value=float(max_weight), step=1.0)
+                #         max_weight = int(max_weight - porcentagem)
+                        
+                #         # train_size_value = st.sidebar.number_input('Treino %', value=80, min_value=0, max_value=90, step=10)
+                #         # test_size_value = st.sidebar.number_input('Teste %', value=int(90 - train_size_value), min_value=0, max_value=int(90 - train_size_value), step=10)
+                #         # deploy_size = st.sidebar.number_input('Simulação %', value=int(100 - (train_size_value + test_size_value)), min_value=int(100 - (train_size_value + test_size_value)), max_value=int(100 - (train_size_value + test_size_value)), step=10)
+                        
+                #         print(f'max_weight: {max_weight}')
+
+                #         wallet_weights.append(porcentagem)
+
+                #     st.sidebar.write(wallet_weights)
+                #     st.sidebar.write('-------')
+
                 from_year = st.sidebar.number_input('Data Inicial', format='%d', value=2019, min_value=2000, max_value=2022, step=1)
                 to_year = st.sidebar.number_input('Data Final', format='%d', value=2020, min_value=2000, max_value=2022, step=1)
-                
+
                 if from_year > to_year:
-                    st.sidebar.error("Data Inicial maior que a Final")
+                    st.sidebar.error('Data Inicial maior que a Final')
                 else:
                     ok = st.sidebar.button('Aplicar Markowitz')
-                
+
                     if ok:
-                        df_symbols = yf.download(assets, start=f'{from_year}-01-01', end=f'{to_year}-12-31', progress=False)['Close']
+                        print(f'from_year: {from_year} | to_year: {to_year}')
+                        df_symbols = yf.download(assets, start=f'{str(from_year)}-01-01', end=f'{str(to_year)}-12-31', progress=False)['Close']
+                        
+                        df_symbols.dropna(axis=0, inplace=True)
                         
                         markowitz(df_symbols, st)

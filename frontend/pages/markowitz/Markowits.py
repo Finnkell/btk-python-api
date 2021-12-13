@@ -14,18 +14,21 @@ matplotlib.rcParams['figure.figsize'] = 16, 8
 
 
 def markowitz(df_symbols: pd.DataFrame, st):
+    
+    @st.cache(allow_output_mutation=True)
     def plot_normalized_price(df):
         fig = plt.figure(figsize=(16, 8))
         ax = plt.axes()
 
         ax.set_title('Normalized Price Plot')
         ax.plot(df[-252:]/df.iloc[-252] * 100)
+        
         ax.legend(df.columns, loc='upper left')
         ax.grid(True)
 
         return fig
 
-
+    @st.cache(allow_output_mutation=True)
     def plot_annualized_returns(annual_returns):
         fig = plt.figure()
         ax = plt.axes()
@@ -36,7 +39,7 @@ def markowitz(df_symbols: pd.DataFrame, st):
 
         return fig
 
-
+    @st.cache(allow_output_mutation=True)
     def plot_annualized_volatility(annual_vols):
         fig = plt.figure()
         ax = plt.axes()
@@ -46,7 +49,7 @@ def markowitz(df_symbols: pd.DataFrame, st):
 
         return fig
 
-
+    @st.cache(allow_output_mutation=True)
     def plot_monte_carlo_simulated_allocation(msrp, port_vols, port_rets):
         fig = plt.figure()
         ax = plt.axes()
@@ -54,12 +57,10 @@ def markowitz(df_symbols: pd.DataFrame, st):
         ax.set_title('Monte Carlo Simulated Allocation')
 
         # Simulated portfolios
-        fig.colorbar(ax.scatter(port_vols, port_rets, c=port_rets / port_vols,
-                    marker='o', cmap='RdYlGn', edgecolors='black'), label='Sharpe Ratio')
+        fig.colorbar(ax.scatter(port_vols, port_rets, c=port_rets / port_vols, marker='o', cmap='RdYlGn', edgecolors='black'), label='Sharpe Ratio')
 
         # Maximum sharpe ratio portfolio
-        ax.scatter(msrp['volatility'], msrp['returns'], c='red',
-                marker='*', s=300, label='Max Sharpe Ratio')
+        ax.scatter(msrp['volatility'], msrp['returns'], c='red', marker='*', s=300, label='Max Sharpe Ratio')
 
         ax.set_xlabel('Expected Volatility')
         ax.set_ylabel('Expected Return')
@@ -67,7 +68,7 @@ def markowitz(df_symbols: pd.DataFrame, st):
 
         return fig
 
-
+    @st.cache(allow_output_mutation=True)
     def portfolio_stats(weights, returns):
         weights = np.array(weights)[:, np.newaxis]
         port_rets = weights.T @ np.array(returns.mean() * 252)[:, np.newaxis]
@@ -164,14 +165,70 @@ def markowitz(df_symbols: pd.DataFrame, st):
         # VaR Histórico
         pCVaR_90, pCVaR_95, pCVaR_99, pHVaR_90, pHVaR_95, pHVaR_99 = CVar_Port(dict_data['weight'][int(index)], returns)
 
-        # st.write(f"Acoes: {symbols}")
-        st.write(f"Retorno : {np.round(dict_data['retorno'][int(index)]*100,2)}% \t | Volatilidade : {np.round(dict_data['volatilidade'][int(index)]*100,2)}% \t | Indice Sharpe : {np.round((dict_data['retorno'][int(index)]/dict_data['volatilidade'][int(index)]),2)}")
+        
+        # dict_data_weights = [f"{str(np.round(i, 2))}%" for i in dict_data['weight'][int(index)]]
+        df_atv_table_dict_data = pd.DataFrame( 
+                            np.array([[ f'Referente ao indice {index} da fronteira eficiente',
+                                        np.round(dict_data['retorno'][int(index)]*100,2), 
+                                        np.round(dict_data['volatilidade'][int(index)]*100,2),
+                                        np.round((dict_data['retorno'][int(index)]/dict_data['volatilidade'][int(index)]),2),
+                                        dict_data['weight'][int(index)]
+                                    ]]), 
+                            columns=['Carteira', 'Retorno', 'Volatilidade', 'Indice Sharpe', 'Pesos'])
+        # st.write(f"Carteira referente a fronteira eficiente")
+        # st.table(df_atv_table_dict_data)
 
-        pesos_acao_print = [f"{str(np.round(i, 2))}%" for i in dict_data['weight'][int(index)]]
-        st.write(f"Pesos para cada ação: {pesos_acao_print}")
-        st.write("VaR Paramétrico \n90 :", np.round(pVaR_90*100, 2), "/95 :", np.round(pVaR_95*100, 2), "/99 :", np.round(pVaR_99*100, 2))
-        st.write("VaR Histórico   \n90 :", np.round(pHVaR_90*100, 2), "/95 :", np.round(pHVaR_95*100, 2), "/99 :", np.round(pHVaR_99*100, 2))
-        st.write("CVaR Histórico \n 90 :", np.round(pCVaR_90*100, 2), "/95 :", np.round(pCVaR_95*100, 2), "/99 :", np.round(pCVaR_99*100, 2))
+        # pesos_acao_print = 
+        # st.write(f"Pesos para cada ação: {pesos_acao_print}")
+        # st.write("VaR Paramétrico \n90 :", np.round(pVaR_90*100, 2), "/95 :", np.round(pVaR_95*100, 2), "/99 :", np.round(pVaR_99*100, 2))
+        # st.write("VaR Histórico   \n90 :", np.round(pHVaR_90*100, 2), "/95 :", np.round(pHVaR_95*100, 2), "/99 :", np.round(pHVaR_99*100, 2))
+        # st.write("CVaR Histórico \n 90 :", np.round(pCVaR_90*100, 2), "/95 :", np.round(pCVaR_95*100, 2), "/99 :", np.round(pCVaR_99*100, 2))
+        
+        df_atv_table_opt_sharpe = pd.DataFrame( 
+                                    np.array([[ 'Maior Indice Sharpe',
+                                                np.round(portfolio_stats(opt_sharpe['x'], returns)[0]*100,2), 
+                                                np.round(portfolio_stats(opt_sharpe['x'], returns)[1]*100,2), 
+                                                np.round(portfolio_stats(opt_sharpe['x'], returns)[2],2), 
+                                                np.round(opt_sharpe['x']*100,2)]]), 
+                                    columns=['Carteira', 'Retorno', 'Volatilidade', 'Indice Sharpe', 'Pesos'])
+        # st.write('\nCarteira Fundamentalista com maior Indice Sharpe')
+        # st.table(df_atv_table_opt_sharpe)
+        
+        df_atv_table_opt_var = pd.DataFrame( 
+                                    np.array([[ 'Menor volatilidade',
+                                                np.round(portfolio_stats(opt_var['x'], returns)[0]*100, 2), 
+                                                np.round(portfolio_stats(opt_var['x'], returns)[1]*100, 2), 
+                                                np.round(portfolio_stats(opt_var['x'], returns)[2], 2), 
+                                                np.round(opt_var['x']*100, 2)]]), 
+                                    columns=['Carteira', 'Retorno', 'Volatilidade', 'Indice Sharpe', 'Pesos'])
+        # st.write('\nCarteira Fundamentalista com menor volatilidade')
+        # st.table(df_atv_table_opt_var)
+        
+
+        df_atv_table_fundamentalista = pd.DataFrame( 
+                                    np.array([[ 'Portfolio inserido',
+                                                np.round(portfolio_stats(array_weights, returns)[0]*100,2), 
+                                                np.round(portfolio_stats(array_weights, returns)[1]*100,2),
+                                                np.round(portfolio_stats(array_weights, returns)[2],2),
+                                                np.round(array_weights*100,2)]]), 
+                                    columns=['Carteira', 'Retorno', 'Volatilidade', 'Indice Sharpe', 'Pesos'])
+        # st.write('\nCarteira Fundamentalista')
+        # st.table(df_atv_table_fundamentalista)
+        
+        wallets_merge = {}
+        wallets_merge['Carteira referente a fronteira eficiente'] = df_atv_table_dict_data
+        wallets_merge['Carteira Fundamentalista Com maior Indice Sharpe'] = df_atv_table_opt_sharpe
+        wallets_merge['Carteira Fundamentalista Com menor volatilidade'] = df_atv_table_opt_var
+        # wallets_merge['Carteira Fundamentalista'] = df_atv_table_fundamentalista
+        
+
+        df_all_wallet = pd.concat([df_atv_table_dict_data, df_atv_table_opt_sharpe, df_atv_table_opt_var, df_atv_table_fundamentalista])
+        # df_all_wallet = pd.DataFrame([wallets_merge])
+        st.table( df_all_wallet )
+        
+        
+        # st.write(f"Retorno : {np.round(portfolio_stats(array_weights)[0]*100,2)}% \t/ Volatilidade : {np.round(portfolio_stats(array_weights)[1]*100,2)}% \t/ Indice Sharpe : ",np.round(portfolio_stats(array_weights)[2],2))
+        # st.write("Pesos : ", np.round(array_weights*100,2))
 
         # st.write('\nCarteira Fundamentalista Com maior Indice Sharpe  ')
         # st.write(f"Retorno : {np.round(portfolio_stats(opt_sharpe['x'])[0]*100,2)}% \t/ Volatilidade : {np.round(portfolio_stats(opt_sharpe['x'])[1]*100,2)}% \t/ Indice Sharpe : ",np.round(portfolio_stats(opt_sharpe['x'])[2],2))
@@ -218,13 +275,8 @@ def markowitz(df_symbols: pd.DataFrame, st):
     wts = numofasset * [1./numofasset]
     wts = np.array(wts)[:, np.newaxis]
 
-    array_weights = np.array([[0.15], [0.05], [0.07], [0.15], [0.05], [0.14], [0.15], [0.15], [0.05], [0.04]])
-    ret = np.array(returns.mean() * 252)[:, np.newaxis]
-
-    cov = returns.cov() * 252
-    var = multi_dot([wts.T, cov, wts])
-
-    w = np.random.random(numofasset)[:, np.newaxis]
+    array_weights = np.full((numofasset, 1), 1/numofasset)
+    # array_weights = np.array([[0.15], [0.05], [0.07], [0.15], [0.05], [0.14], [0.15], [0.15], [0.05], [0.04]])
 
     # Initialize the lists
     rets = []
@@ -258,7 +310,6 @@ def markowitz(df_symbols: pd.DataFrame, st):
     })
 
     msrp = msrp_df.iloc[msrp_df['sharpe_ratio'].idxmax()]
-    max_sharpe_port_wts = msrp_df['weights'][msrp_df['sharpe_ratio'].idxmax()]
 
     fig = plot_monte_carlo_simulated_allocation(msrp, port_vols, port_rets)
     st.pyplot(fig)
@@ -268,12 +319,9 @@ def markowitz(df_symbols: pd.DataFrame, st):
     initial_wts = numofasset*[1./numofasset]
 
     opt_sharpe = sco.minimize(min_sharpe_ratio, initial_wts, args=(returns,), method='SLSQP', bounds=bnds, constraints=cons)
-    stats = ['Returns', 'Volatility', 'Sharpe Ratio']
 
     opt_var = sco.minimize(min_variance, initial_wts, args=(returns,), method='SLSQP', bounds=bnds, constraints=cons)
     array_weights = array_weights.flatten()
-
-    data = pd.DataFrame(columns=['Retorno', 'Volatilidade', 'Indice Sharpe', 'pesos'])
 
     targetrets = np.linspace(port_rets.min(), port_rets.max(), 250)
     tvols = []
@@ -287,7 +335,7 @@ def markowitz(df_symbols: pd.DataFrame, st):
         opt_ef = sco.minimize(min_volatility, initial_wts, args=(returns,), method='SLSQP', bounds=bnds, constraints=ef_cons)
 
         tvols.append(opt_ef['fun'])
-        tweights.append(opt_ef['x'])
+        tweights.append(np.round(opt_ef['x'], 2))
 
     targetweights = np.array(tweights)
     targetvols = np.array(tvols)
@@ -299,23 +347,23 @@ def markowitz(df_symbols: pd.DataFrame, st):
     dict_data['sharpe'] = targetrets/targetvols
     dict_data['weight'] = targetweights
 
-    st.write(f"Weight len: {len(dict_data['weight'])}")
-    st.write(f"Vol len: {len(dict_data['volatilidade'])}")
-    st.write(f"Return len: {len(dict_data['retorno'])}")
+    # index_dict = [i for i in range(len(dict_data["retorno"])) if round(dict_data["retorno"][i], 4) % portfolio_stats(array_weights, returns)[0] <= 0.005]
 
-    index_dict = [i for i in range(len(dict_data["retorno"])) if round(dict_data["retorno"][i], 4) % portfolio_stats(array_weights, returns)[0] <= 0.005]
+    # retorno_print = np.round(dict_data['retorno'][index_dict[0] - 1], 2)
+    # vol_print = np.round(dict_data['volatilidade'][index_dict[0] - 1], 2)
+    # weights_plot = [f"{str(np.round(i, 2))}%" for i in dict_data['weight'][index_dict[0] - 1]]
 
-    retorno_print = np.round(dict_data['retorno'][index_dict[0] - 1], 2)
-    vol_print = np.round(dict_data['volatilidade'][index_dict[0] - 1], 2)
-    weights_plot = [f"{str(np.round(i, 2))}%" for i in dict_data['weight'][index_dict[0] - 1]]
+    # df_atv_table = pd.DataFrame( np.array([[retorno_print, vol_print, weights_plot]]), columns=['Retorno', 'Volatilidade', 'Peso'])
+    # st.table(df_atv_table)
 
-    st.write(f"Retorno: {retorno_print}")
-    st.write(f"volatilidade: {vol_print}")
-    st.write(f"weight: {weights_plot}")
-    st.write(f"somaweight: {sum(dict_data['weight'][index_dict[0] - 1])*100}")
+    # st.write(f"Retorno: {retorno_print}")
+    # st.write(f"volatilidade: {vol_print}")
+    # st.write(f"weight: {weights_plot}")
+    # st.write(f"somaweight: {sum(dict_data['weight'][index_dict[0] - 1])*100}")
 
     index_dict = wallet_reposition("retorno", array_weights, dict_data, opt_sharpe, returns)
 
-    # plot_index = st.slider('Movimento sua cartira dentro da fronteira eficiente', 0, 249, 1)
-    fig = plot_int(0, targetvols, targetrets, opt_sharpe, opt_var, dict_data, array_weights, returns, st)
+    # TODO: when the slider is pressed the page can't reload
+    plot_index = st.slider('Movimento sua cartira dentro da fronteira eficiente', 0, 249, 1)
+    fig = plot_int(plot_index, targetvols, targetrets, opt_sharpe, opt_var, dict_data, array_weights, returns, st)
     st.pyplot(fig)

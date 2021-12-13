@@ -29,8 +29,7 @@ class SVRStrategyModel:
             return True
         else:
             y_pred = model.predict(X_test)
-            print(model.model_summary(y_pred, y_test,
-                  None, None))
+            print(model.model_summary(y_pred, y_test,None, None))
             model.save_model(f'{name}/SVR')
 
             return True

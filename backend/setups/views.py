@@ -57,7 +57,6 @@ class SVRModelView(APIView):
 
     @api_view(['GET'])
     def predict(request):
-
         if request.method == 'GET':
             body_data = json.dumps(request.data)
             body = json.loads(body_data)
@@ -73,8 +72,9 @@ class SVRModelView(APIView):
             return JsonResponse({'prediction': y_pred[0]})
 
     def get(self, request):
-        body = json.loads(request.body)
-        asset_name = body['name']
+        body_data = json.dumps(request.data)
+        body_data = json.loads(body_data)
+        asset_name = body_data['name']
 
         model_summary = joblib.load(
             f'static/saved_models/{asset_name}/SVR_summary.pkl')

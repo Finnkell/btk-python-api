@@ -215,12 +215,6 @@ def markowitz(df_symbols: pd.DataFrame, st):
         # st.write('\nCarteira Fundamentalista')
         # st.table(df_atv_table_fundamentalista)
         
-        wallets_merge = {}
-        wallets_merge['Carteira referente a fronteira eficiente'] = df_atv_table_dict_data
-        wallets_merge['Carteira Fundamentalista Com maior Indice Sharpe'] = df_atv_table_opt_sharpe
-        wallets_merge['Carteira Fundamentalista Com menor volatilidade'] = df_atv_table_opt_var
-        # wallets_merge['Carteira Fundamentalista'] = df_atv_table_fundamentalista
-        
 
         df_all_wallet = pd.concat([df_atv_table_dict_data, df_atv_table_opt_sharpe, df_atv_table_opt_var, df_atv_table_fundamentalista])
         # df_all_wallet = pd.DataFrame([wallets_merge])

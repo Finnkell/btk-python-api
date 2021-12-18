@@ -6,7 +6,7 @@ import requests
 import plotly.express as px
 import plotly.graph_objects as go
 
-from pages.markowitz.Markowits import markowitz
+from pages.markowitz_plot.markowits_plot import plot_normalized_price, plot_annualized_returns, plot_annualized_volatility, plot_monte_carlo_simulated_allocation, plot_int
 
 class MarkowitzApp:
     def home(self, st):
@@ -71,9 +71,29 @@ class MarkowitzApp:
                     ok = st.sidebar.button('Aplicar Markowitz')
 
                     if ok:
-                        print(f'from_year: {from_year} | to_year: {to_year}')
-                        df_symbols = yf.download(assets, start=f'{str(from_year)}-01-01', end=f'{str(to_year)}-12-31', progress=False)['Close']
+                        json_data = {
+                            'start_date': from_year,
+                            'end_date': to_year,
+                            'assets': assets
+                        }
                         
-                        df_symbols.dropna(axis=0, inplace=True)
+                        response_data = requests.get('http://localhost:8000/tools/markowitz/', json=json_data)
                         
-                        markowitz(df_symbols, st)
+                        try:
+                            df_data = response_data.json()['assets_data']
+                            try:
+                                fig = plot_normalized_price(df_data)
+                                st.pyplot(fig)
+                            except:
+                                st.error('Erro ao mostrar o gráfico de dados normalizados')    
+                        except:
+                            st.error('Erro ao receber os dados normalizados')
+                            
+                        
+                        
+                        # print(f'from_year: {from_year} | to_year: {to_year}')
+                        # df_symbols = yf.download(assets, start=f'{str(from_year)}-01-01', end=f'{str(to_year)}-12-31', progress=False)['Close']
+                        
+                        # df_symbols.dropna(axis=0, inplace=True)
+                        
+                        # markowitz(df_symbols, st)
